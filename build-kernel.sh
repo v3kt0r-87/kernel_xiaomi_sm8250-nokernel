@@ -103,11 +103,11 @@ else
 fi
 
 # Build the kernel
-echo "**** Kernel defconfig is set to $KERNEL_DEFCONFIG ****"
-echo -e "$blue***********************************************"
-echo "          BUILDING KERNEL          "
-echo -e "***********************************************$nocol"
-make $KERNEL_DEFCONFIG O=out CC=clang
+make $KERNEL_DEFCONFIG O=out CC=clang ARCH=arm64
+scripts/config --file out/.config \
+                -e LTO_CLANG \
+                -e LTO_CLANG_THIN \
+                -d LTO_CLANG_FULL
 make -j$(nproc --all) O=out \
                       CC=clang \
                       ARCH=arm64 \
@@ -116,6 +116,7 @@ make -j$(nproc --all) O=out \
                       OBJDUMP=llvm-objdump \
                       LD=ld.lld \
                       STRIP=llvm-strip
+
 
 # Create a zip file with the built kernel
 mkdir -p tmp
