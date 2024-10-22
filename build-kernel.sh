@@ -104,10 +104,6 @@ fi
 
 # Build the kernel
 make $KERNEL_DEFCONFIG O=out CC=clang ARCH=arm64
-scripts/config --file out/.config \
-                -e LTO_CLANG \
-                -e LTO_CLANG_THIN \
-                -d LTO_CLANG_FULL
 make -j$(nproc --all) O=out \
                       CC=clang \
                       ARCH=arm64 \
