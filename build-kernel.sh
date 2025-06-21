@@ -2,15 +2,25 @@
 #set -e  
 
 # Clean previous build outputs
-rm -rf out/
+rm -rf out/ AGNI-*
+
+# AOSP Clang
+CLANG_VERSION="clang-r547379"
+CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/master/${CLANG_VERSION}.tgz"
+ARCHIVE_NAME="aosp-clang.tar.gz"
 
 # Set the working directory and paths
 DIR=$(readlink -f .)
 MAIN=$(readlink -f ${DIR}/..)
 ZIMAGE_DIR="$(pwd)/out/arch/arm64/boot"
-KERNEL_DEFCONFIG=/vendor/munch_defconfig
+KERNEL_DEFCONFIG=vendor/munch_defconfig
+restore=0
 
-# Set up toolchain and build tools
+# Set environment variables for the build
+export PATH="${MAIN}/clang/bin:${MAIN}/clang/gcc/bin:${MAIN}/clang/gcc32/bin:${PATH}"
+export ARCH=arm64
+export SUBARCH=arm64
+
 LINKER="ld.lld"
 MAKE="./makeparallel"
 BUILD_START=$(date +"%s")
@@ -24,10 +34,6 @@ nocol='\033[0m'
 if [ ! -d "$MAIN/clang" ]; then
     echo "No clang compiler found ... Downloading AOSP Clang"
 
-    CLANG_VERSION="clang-r536225"
-    CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/master/${CLANG_VERSION}.tgz"
-    ARCHIVE_NAME="aosp-clang.tar.gz"
-
     # Download Clang archive
     if ! wget -P "$MAIN" "$CLANG_URL" -O "$MAIN/$ARCHIVE_NAME"; then
         echo "Failed to download. Exiting..."
@@ -36,6 +42,7 @@ if [ ! -d "$MAIN/clang" ]; then
 
     # Create clang directory and extract archive
     mkdir -p "$MAIN/clang"
+
     if ! tar -xvf "$MAIN/$ARCHIVE_NAME" -C "$MAIN/clang"; then
         echo "Failed to extract Clang. Exiting..."
         exit 1
@@ -55,10 +62,6 @@ if [ ! -d "$MAIN/clang" ]; then
     fi
 fi
 
-# Set environment variables for the build
-export PATH="${MAIN}/clang/bin:${MAIN}/clang/gcc/bin:${MAIN}/clang/gcc32/bin:${PATH}"
-export ARCH=arm64
-export SUBARCH=arm64
 clear
 
 # Display initialization message
@@ -78,6 +81,7 @@ if [ "$build_choice" = "1" ]; then
     sed -i 's/qcom,mdss-pan-physical-width-dimension = <70>;$/qcom,mdss-pan-physical-width-dimension = <695>;/' arch/arm64/boot/dts/vendor/qcom/dsi-panel-l11r-38-08-0a-dsc-cmd.dtsi
     sed -i 's/qcom,mdss-pan-physical-height-dimension = <155>;$/qcom,mdss-pan-physical-height-dimension = <1546>;/' arch/arm64/boot/dts/vendor/qcom/dsi-panel-l11r-38-08-0a-dsc-cmd.dtsi
     zip_name="MIUI"
+    restore=1
 elif [ "$build_choice" = "2" ]; then
     echo "AOSP build selected. No modifications needed."
     zip_name="AOSP"
@@ -91,6 +95,7 @@ make $KERNEL_DEFCONFIG O=out CC=clang ARCH=arm64
 make -j$(nproc --all) O=out \
                       CC=clang \
                       ARCH=arm64 \
+                      SUBARCH=arm64 \
                       LD=ld.lld \
                       LLVM=1 \
 	                  LLVM_IAS=1 \
@@ -123,4 +128,6 @@ revert_changes() {
 }
 
 # Revert changes after compiling kernel
-revert_changes
+if [ $restore == 1 ]; then
+    revert_changes
+fi
