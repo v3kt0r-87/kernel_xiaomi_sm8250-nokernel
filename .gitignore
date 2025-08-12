@@ -142,3 +142,6 @@ kernel/configs/android-*.cfg
 out/
 build.sh
 dtbo_build.sh
+
+#KernelSU Next
+KernelSU-Next/
