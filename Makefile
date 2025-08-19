@@ -935,7 +935,7 @@ endif
 ifdef CONFIG_LTO_CLANG
     ifdef CONFIG_LTO_CLANG_THIN
         # Thin LTO Configuration
-        CC_FLAGS_LTO += -flto=thin -fsplit-lto-unit -funified-lto
+        CC_FLAGS_LTO += -flto=thin -fsplit-lto-unit -funified-lto -fvisibility=hidden -fsplit-machine-functions -fstack-protector-strong
         KBUILD_LDFLAGS += --thinlto-cache-dir=.thinlto-cache --thinlto-jobs=$(nproc --all)
     else
         # Full LTO Configuration
